@@ -1,0 +1,11 @@
+title: "Análise Estatística de Dados de Diabetes"
+author: "Seu Nome e Dupla"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    highlight: tango
+    theme: cosmo
+    toc: true
+---
+
+```{r setup, include=FALSE}
