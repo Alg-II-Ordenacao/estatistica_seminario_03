@@ -1,5 +1,5 @@
 ---
-title: "Análise Estatística - Diabetes"
+title: "Análise Estatística e Preditiva de  Diabetes Tipo 2 na População Indígena Pima"
 author: "Matheus Cândido e Fernando Simão"
 date: "18 de março de 2026"
 output: 
@@ -53,9 +53,9 @@ for (col in cols_zeros) {
 
 ## 1. Estatística Descritiva
 
-Para fundamentar as análises inferenciais subsequentes, foi conduzida uma exploração inicial baseada na estatística descritiva dos dados coletados. [cite_start]Após o tratamento de inconsistências biológicas (substituição de zeros espúrios por valores imputados com base na mediana dos agrupamentos diagnósticos), extraímos as medidas de posição e de dispersão fundamentais.
+Para fundamentar as análises inferenciais subsequentes, foi conduzida uma exploração inicial baseada na estatística descritiva dos dados coletados. Após o tratamento de inconsistências biológicas (substituição de zeros espúrios por valores imputados com base na mediana dos agrupamentos diagnósticos), extraímos as medidas de posição e de dispersão fundamentais.
 
-Os quadros abaixo apresentam o sumário de cinco números (mínimo, quartis, mediana e máximo) em conjunto com as médias aritméticas e os respectivos desvios padrão para todas as variáveis clínicas analisadas. [cite_start]Este escrutínio quantitativo permite visualizar a centralidade e a variabilidade amostral, pressupostos básicos para a aplicação dos testes de hipóteses.
+Os quadros abaixo apresentam o sumário de cinco números (mínimo, quartis, mediana e máximo) em conjunto com as médias aritméticas e os respectivos desvios padrão para todas as variáveis clínicas analisadas. Este escrutínio quantitativo permite visualizar a centralidade e a variabilidade amostral, pressupostos básicos para a aplicação dos testes de hipóteses.
 
 ```{r estatistica_descritiva}
 # ----------------------------
@@ -217,7 +217,7 @@ print(teste_variancia_idade)
 
 ### 4.3 Comparação de Proporções
 
-[cite_start]Para finalizar a análise univariada, aplicamos o teste para comparação de duas proporções[cite: 753]. O objetivo é validar estatisticamente se a proporção de indivíduos diabéticos varia significativamente entre diferentes estratos da amostra (faixas etárias e gênero aproximado pelo histórico de gestações).
+Para finalizar a análise univariada, aplicamos o teste para comparação de duas proporções[cite: 753]. O objetivo é validar estatisticamente se a proporção de indivíduos diabéticos varia significativamente entre diferentes estratos da amostra (faixas etárias e gênero aproximado pelo histórico de gestações).
 
 ```{r teste_proporcoes}
 # ----------------------------------------
@@ -308,9 +308,9 @@ kable(tabela_resultados,
 
 ## 6. Análise de Regressão Linear Simples
 
-[cite_start]A análise de regressão linear simples visa estabelecer uma relação funcional matemática entre uma variável preditora (independente) e uma variável resposta (dependente)[cite: 37, 38]. [cite_start]Baseado no modelo teórico da reta $y = \beta_0 + \beta_1 x + \epsilon$[cite: 168], ajustamos um modelo pelo Método dos Mínimos Quadrados (MMQ) para verificar como o Índice de Massa Corporal (BMI) pode explicar as variações nos níveis de Glicose (Glucose).
+A análise de regressão linear simples visa estabelecer uma relação funcional matemática entre uma variável preditora (independente) e uma variável resposta (dependente)[cite: 37, 38]. Baseado no modelo teórico da reta $y = \beta_0 + \beta_1 x + \epsilon$[cite: 168], ajustamos um modelo pelo Método dos Mínimos Quadrados (MMQ) para verificar como o Índice de Massa Corporal (BMI) pode explicar as variações nos níveis de Glicose (Glucose).
 
-[cite_start]O sumário do modelo fornece os coeficientes estimados ($\hat{\beta}_0$ e $\hat{\beta}_1$) e o coeficiente de determinação ($R^2$), que indica a proporção da variação da variável dependente que é explicada pelo modelo[cite: 232].
+O sumário do modelo fornece os coeficientes estimados ($\hat{\beta}_0$ e $\hat{\beta}_1$) e o coeficiente de determinação ($R^2$), que indica a proporção da variação da variável dependente que é explicada pelo modelo[cite: 232].
 
 ```{r regressao_linear, fig.width=8, fig.height=5}
 # ----------------------------
@@ -322,19 +322,16 @@ summary(modelo_lm)
 # ----------------------------
 # Gráfico com a Reta de Regressão
 # ----------------------------
-grafico_reg <- ggplot(dados, aes(x = BMI, y = Glucose)) +
+grafico_reg <- ggplot(dados, aes(x = BMI, y = SkinThickness)) +
   geom_point(alpha = 0.5, color = "darkblue") +
-  geom_smooth(method = "lm", color = "red", se = TRUE) +
-  labs(title = "Regressão Linear Simples: Glicose ~ BMI",
-       x = "Índice de Massa Corporal (BMI)",
-       y = "Glicose") +
-  theme_minimal()
+  geom_smooth(method = "lm", color = "red") +
+  labs(title = "Regressão: SkinThickness ~ BMI")
 
 print(grafico_reg)
 ```
 
 **Interpretação:**
-A reta de regressão (em vermelho) ilustra a tendência central da relação. A inclinação positiva da reta ($\hat{\beta}_1 > 0$) sugere que o aumento do BMI está linearmente associado à elevação dos níveis de Glicose na amostra analisada.
+A reta de regressão (em vermelho) ilustra a tendência central da relação. A inclinação positiva da reta ($\hat{\beta}_1 > 0$) sugere que o aumento do BMI está linearmente associado à espessura da pele nos indivíduos na amostra analisada.
 
 
 ## 7. Regressão Logística (Modelo Preditivo Principal)
