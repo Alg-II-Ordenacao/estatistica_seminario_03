@@ -1,11 +1,73 @@
-title: "Análise Estatística de Dados de Diabetes"
-author: "Seu Nome e Dupla"
-date: "`r Sys.Date()`"
+---
+title: "Análise Estatística - Diabetes"
+author: "Matheus Cândido e Fernando Simão"
+date: "18 de março de 2026"
 output: 
   html_document:
-    highlight: tango
-    theme: cosmo
     toc: true
+    toc_float: true
+    theme: spacelab
 ---
 
-```{r setup, include=FALSE}
+```{r setup_oculto, include=FALSE}
+# ==========================================
+# SETUP E TRATAMENTO DE DADOS (EM SEGUNDO PLANO)
+# ==========================================
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(scipen = 999)
+
+# 1. Bibliotecas
+pacotes <- c("readr", "dplyr", "ggplot2", "randomForest", "reshape2")
+for (p in pacotes) {
+  if (!require(p, character.only = TRUE)) {
+    install.packages(p)
+    library(p, character.only = TRUE)
+  }
+}
+
+# 2. Carregamento dos dados
+dados <- read_csv("diabetes.csv")
+
+# 3. Limpeza e Imputação
+dados <- dados %>%
+  dplyr::select(Pregnancies, Glucose, BloodPressure, SkinThickness,
+                Insulin, BMI, DiabetesPedigreeFunction, Age, Outcome)
+
+cols_zeros <- c("Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI")
+
+dados[cols_zeros] <- lapply(dados[cols_zeros], function(x) {
+  ifelse(x == 0, NA, as.numeric(as.character(x)))
+})
+
+for (col in cols_zeros) {
+  mediana_0 <- median(dados[[col]][dados$Outcome == 0], na.rm = TRUE)
+  mediana_1 <- median(dados[[col]][dados$Outcome == 1], na.rm = TRUE)
+  
+  if (is.na(mediana_0)) mediana_0 <- median(dados[[col]], na.rm = TRUE)
+  if (is.na(mediana_1)) mediana_1 <- median(dados[[col]], na.rm = TRUE)
+  
+  dados[[col]][dados$Outcome == 0 & is.na(dados[[col]])] <- mediana_0
+  dados[[col]][dados$Outcome == 1 & is.na(dados[[col]])] <- mediana_1
+}
+```
+
+## 4. Estatística Descritiva
+
+Para fundamentar as análises inferenciais subsequentes, foi conduzida uma exploração inicial baseada na estatística descritiva dos dados coletados. [cite_start]Após o tratamento de inconsistências biológicas (substituição de zeros espúrios por valores imputados com base na mediana dos agrupamentos diagnósticos), extraímos as medidas de posição e de dispersão fundamentais.
+
+Os quadros abaixo apresentam o sumário de cinco números (mínimo, quartis, mediana e máximo) em conjunto com as médias aritméticas e os respectivos desvios padrão para todas as variáveis clínicas analisadas. [cite_start]Este escrutínio quantitativo permite visualizar a centralidade e a variabilidade amostral, pressupostos básicos para a aplicação dos testes de hipóteses.
+
+```{r estatistica_descritiva}
+# ----------------------------
+# Resumo de medidas de posição
+# ----------------------------
+summary(dados)
+
+# ----------------------------
+# Cálculo de Média e Desvio Padrão
+# ----------------------------
+dados %>%
+  summarise(across(everything(),
+                   list(media = mean, sd = sd),
+                   na.rm = TRUE))
+```

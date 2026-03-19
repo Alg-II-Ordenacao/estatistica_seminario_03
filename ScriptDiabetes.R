@@ -90,16 +90,20 @@ dados %>%
 # ----------------------------
 
 # Histograma
-ggplot(dados, aes(x = Glucose)) +
+grafico_hist <- ggplot(dados, aes(x = Glucose)) +
   geom_histogram(bins = 20, fill = "skyblue", color = "black") +
   ggtitle("Distribuição da Glicose")
 
+print(grafico_hist) # <-- Adicione o print() aqui!
+
 # Dispersão
-ggplot(dados, aes(x = BMI, y = Glucose, color = as.factor(Outcome))) +
+grafico_disp <- ggplot(dados, aes(x = BMI, y = Glucose, color = as.factor(Outcome))) +
   geom_point(alpha = 0.6) +
   scale_color_manual(values = c("blue", "red"), name = "Diabetes", 
                      labels = c("Não", "Sim")) +
   ggtitle("BMI vs Glicose por Diagnóstico")
+
+print(grafico_disp) # <-- Adicione o print() aqui!
 
 # ----------------------------
 # 6. Correlação
@@ -112,13 +116,15 @@ library(reshape2)
 cor_long <- melt(correlacao)
 
 
-ggplot(cor_long, aes(x = Var1, y = Var2, fill = value)) +
+grafico_cor <- ggplot(cor_long, aes(x = Var1, y = Var2, fill = value)) +
   geom_tile() +
   geom_text(aes(label = round(value, 2)), size = 3) +
   scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0) +
   theme_minimal() +
   labs(title = "Matriz de Correlação", x = "", y = "") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+print(grafico_cor) # <-- Adicione o print() aqui!
 
 # =====================================================
 # 7. TESTES DE HIPÓTESES OBRIGATÓRIOS
@@ -258,13 +264,14 @@ modelo_lm <- lm(Glucose ~ BMI, data = dados)
 summary(modelo_lm)
 
 # Gráfico com regressão
-ggplot(dados, aes(x = BMI, y = Glucose)) +
+grafico_reg <- ggplot(dados, aes(x = BMI, y = Glucose)) +
   geom_point(aes(color = as.factor(Outcome)), alpha = 0.6) +
   geom_smooth(method = "lm", se = TRUE, color = "black") +
   scale_color_manual(values = c("blue", "red"), name = "Diabetes", 
                      labels = c("Não", "Sim")) +
   ggtitle("Regressão Linear: Glicose ~ BMI")
 
+print(grafico_reg) # <-- Adicione o print() aqui!
 # =====================================================
 # 10. Regressão Logística (modelo principal)
 # =====================================================
