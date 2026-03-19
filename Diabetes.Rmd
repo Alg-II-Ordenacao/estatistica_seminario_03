@@ -71,3 +71,41 @@ dados %>%
                    list(media = mean, sd = sd),
                    na.rm = TRUE))
 ```
+
+## 5. Visualização de Dados (Gráficos)
+
+A exploração visual dos dados é uma etapa indispensável na análise estatística, pois permite a identificação imediata de padrões de distribuição, assimetrias e potenciais agrupamentos (clusters) entre as variáveis de interesse. A seguir, apresentamos a distribuição da variável Glicose e a relação bivariada entre o Índice de Massa Corporal (BMI) e a Glicose, estratificada pelo diagnóstico clínico.
+
+```{r graficos, fig.width=8, fig.height=5}
+# ----------------------------
+# Histograma: Distribuição da Glicose
+# ----------------------------
+grafico_hist <- ggplot(dados, aes(x = Glucose)) +
+  geom_histogram(bins = 20, fill = "skyblue", color = "black") +
+  ggtitle("Distribuição da Glicose") +
+  theme_minimal()
+
+print(grafico_hist)
+```
+
+**Interpretação do Histograma:**
+O gráfico acima ilustra a distribuição de frequências dos níveis de Glicose na amostra. A análise visual permite avaliar a centralidade e a dispersão dos dados, bem como a aproximação da normalidade. Observa-se a concentração de pacientes em faixas glicêmicas específicas. A assimetria ou a presença de múltiplas modas neste tipo de distribuição frequentemente indica a coexistência de subpopulações distintas na amostra (neste caso, indivíduos saudáveis e indivíduos com tolerância à glicose prejudicada ou diabetes estabelecida).
+
+```{r grafico_dispersao, fig.width=8, fig.height=5}
+# ----------------------------
+# Dispersão: BMI vs Glicose por Diagnóstico
+# ----------------------------
+grafico_disp <- ggplot(dados, aes(x = BMI, y = Glucose, color = as.factor(Outcome))) +
+  geom_point(alpha = 0.6) +
+  scale_color_manual(values = c("blue", "red"), name = "Diabetes", 
+                     labels = c("Não", "Sim")) +
+  ggtitle("BMI vs Glicose por Diagnóstico") +
+  theme_minimal()
+
+print(grafico_disp)
+```
+
+**Interpretação do Gráfico de Dispersão:**
+Este diagrama de dispersão avalia a relação simultânea entre duas variáveis contínuas cruciais: o Índice de Massa Corporal (BMI) no eixo X e a Glicose no eixo Y. A estratificação por cores diferencia os pacientes com diagnóstico positivo para diabetes (vermelho) dos pacientes com diagnóstico negativo (azul). 
+
+Nota-se claramente que os pontos vermelhos tendem a se aglomerar no quadrante superior direito do plano cartesiano. Isso evidencia, visualmente, que indivíduos que apresentam simultaneamente maiores índices de massa corporal e níveis glicêmicos mais elevados possuem uma prevalência consideravelmente maior de diagnóstico positivo para a doença. Em contrapartida, o quadrante inferior esquerdo é predominantemente ocupado por indivíduos não diabéticos.
