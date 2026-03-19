@@ -6,18 +6,16 @@ output:
   html_document:
     toc: true
     toc_float: true
-    theme: spacelab
 ---
 
 ```{r setup_oculto, include=FALSE}
-# ==========================================
 # SETUP E TRATAMENTO DE DADOS (EM SEGUNDO PLANO)
-# ==========================================
+
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 options(scipen = 999)
 
 # 1. Bibliotecas
-pacotes <- c("readr", "dplyr", "ggplot2", "randomForest", "reshape2")
+pacotes <- c("readr", "dplyr", "ggplot2", "randomForest", "reshape2", "knitr")
 for (p in pacotes) {
   if (!require(p, character.only = TRUE)) {
     install.packages(p)
@@ -50,33 +48,76 @@ for (col in cols_zeros) {
   dados[[col]][dados$Outcome == 1 & is.na(dados[[col]])] <- mediana_1
 }
 ```
-
+---
 ## 1. Estatística Descritiva
 
 Para fundamentar as análises inferenciais subsequentes, foi conduzida uma exploração inicial baseada na estatística descritiva dos dados coletados. Após o tratamento de inconsistências biológicas (substituição de zeros espúrios por valores imputados com base na mediana dos agrupamentos diagnósticos), extraímos as medidas de posição e de dispersão fundamentais.
 
-Os quadros abaixo apresentam o sumário de cinco números (mínimo, quartis, mediana e máximo) em conjunto com as médias aritméticas e os respectivos desvios padrão para todas as variáveis clínicas analisadas. Este escrutínio quantitativo permite visualizar a centralidade e a variabilidade amostral, pressupostos básicos para a aplicação dos testes de hipóteses.
+Banco de dados: https://www.kaggle.com/datasets/uciml/pima-indians-diabetes-database
 
-```{r estatistica_descritiva}
+O quadro abaixo mostra os primeiros índices do banco de dados, dando uma melhor base de entendimento sobre sua utilizacao e variáveis:
+
+```{r estatistica_descritiva, echo=FALSE}
 # ----------------------------
 # Resumo de medidas de posição
 # ----------------------------
-summary(dados)
-
-# ----------------------------
-# Cálculo de Média e Desvio Padrão
-# ----------------------------
-dados %>%
-  summarise(across(everything(),
-                   list(media = mean, sd = sd),
-                   na.rm = TRUE))
+kable(head(dados, 10), caption = "Primeiras 10 linhas do dataset")
 ```
-
-## 2. Visualização de Dados (Gráficos)
+## 2. Visualização de Dados
 
 A exploração visual dos dados é uma etapa indispensável na análise estatística, pois permite a identificação imediata de padrões de distribuição, assimetrias e potenciais agrupamentos (clusters) entre as variáveis de interesse. A seguir, apresentamos a distribuição da variável Glicose e a relação bivariada entre o Índice de Massa Corporal (BMI) e a Glicose, estratificada pelo diagnóstico clínico.
 
-```{r graficos, fig.width=8, fig.height=5}
+```{r boxplot_skinthickness, echo=FALSE}
+library(ggplot2)
+
+ggplot(dados, aes(x = "", y = SkinThickness)) +
+  geom_boxplot(fill = "skyblue", outlier.color = "red") +
+  # Adiciona a média como um ponto (losango branco)
+  stat_summary(fun = "mean", geom = "point", shape = 23, size = 3, fill = "white") +
+  labs(title = "Distribuição de SkinThickness", x = "", y = "Valores") +
+  theme_classic()
+```
+
+**Estabilidade:** A maior parte dos dados está concentrada em uma faixa estreita, com a mediana próxima de 30.
+
+**Anomalias:** Note que existem pontos vermelhos tanto na parte superior (chegando a 100) quanto na parte inferior (próximo a 10).
+
+**Ponto Crítico:** Um valor de 100mm para dobra cutânea é extremamente raro e pode indicar um erro de digitação ou medição no dataset original.
+
+```{r Insulin, echo=FALSE}
+ggplot(dados, aes(x = "", y = Insulin)) +
+  geom_boxplot(fill = "skyblue", outlier.color = "red") +
+  # Adiciona o ponto da média
+  stat_summary(fun = "mean", geom = "point", shape = 23, size = 3, fill = "white") +
+  labs(title = "Distribuição de Insulin", x = "", y = "Valores") +
+  theme_classic()
+```
+
+**Concentração:** A "caixa" azul está muito achatada na parte inferior, indicando que a grande maioria dos pacientes possui níveis de insulina baixos ou moderados (provavelmente entre 0 e 200).
+
+**Outliers:** Há uma quantidade massiva de valores atípicos que se estendem até quase 900. Isso sugere uma cauda longa à direita (assimetria positiva), comum em dados biológicos onde alguns indivíduos apresentam resistência severa à insulina.
+
+**Mediana:** Está posicionada bem abaixo no gráfico, reforçando que o valor "central" é baixo em comparação aos extremos detectados.
+
+```{r BMI, echo=FALSE}
+ggplot(dados, aes(x = "", y = BMI)) +
+  geom_boxplot(fill = "skyblue", outlier.color = "red") +
+  # Adiciona a média como um losango branco
+  stat_summary(fun = "mean", geom = "point", shape = 23, size = 3, fill = "white") +
+  labs(title = "Distribuição de BMI", x = "", y = "Valores") +
+  theme_classic()
+```
+
+**Mediana:** A linha central da caixa está em torno de 32, o que já classifica a mediana desse grupo na faixa de Obesidade Grau I.
+
+**Dispersão:** A caixa (Intervalo Interquartil) concentra-se aproximadamente entre 28 e 37.
+
+**Outliers:** Existem pontos vermelhos que chedem a 60-70. Embora sejam valores extremos, são biologicamente possíveis em casos de obesidade mórbida, mas devem ser tratados com cuidado na modelagem preditiva.
+
+
+
+
+```{r graficos, fig.width=8, fig.height=3, echo=FALSE}
 # ----------------------------
 # Histograma: Distribuição da Glicose
 # ----------------------------
@@ -91,37 +132,18 @@ print(grafico_hist)
 **Interpretação do Histograma:**
 O gráfico acima ilustra a distribuição de frequências dos níveis de Glicose na amostra. A análise visual permite avaliar a centralidade e a dispersão dos dados, bem como a aproximação da normalidade. Observa-se a concentração de pacientes em faixas glicêmicas específicas. A assimetria ou a presença de múltiplas modas neste tipo de distribuição frequentemente indica a coexistência de subpopulações distintas na amostra (neste caso, indivíduos saudáveis e indivíduos com tolerância à glicose prejudicada ou diabetes estabelecida).
 
-```{r grafico_dispersao, fig.width=8, fig.height=5}
-# ----------------------------
-# Dispersão: BMI vs Glicose por Diagnóstico
-# ----------------------------
-grafico_disp <- ggplot(dados, aes(x = BMI, y = Glucose, color = as.factor(Outcome))) +
-  geom_point(alpha = 0.6) +
-  scale_color_manual(values = c("blue", "red"), name = "Diabetes", 
-                     labels = c("Não", "Sim")) +
-  ggtitle("BMI vs Glicose por Diagnóstico") +
-  theme_minimal()
 
-print(grafico_disp)
-```
-
-**Interpretação do Gráfico de Dispersão:**
-Este diagrama de dispersão avalia a relação simultânea entre duas variáveis contínuas cruciais: o Índice de Massa Corporal (BMI) no eixo X e a Glicose no eixo Y. A estratificação por cores diferencia os pacientes com diagnóstico positivo para diabetes (vermelho) dos pacientes com diagnóstico negativo (azul). 
-
-Nota-se claramente que os pontos vermelhos tendem a se aglomerar no quadrante superior direito do plano cartesiano. Isso evidencia, visualmente, que indivíduos que apresentam simultaneamente maiores índices de massa corporal e níveis glicêmicos mais elevados possuem uma prevalência consideravelmente maior de diagnóstico positivo para a doença. Em contrapartida, o quadrante inferior esquerdo é predominantemente ocupado por indivíduos não diabéticos.
-
-## 3. Análise de Correlação Linear
+## 3. Análise da correlação de Pearson
 
 Para compreender a estrutura de dependência linear entre as covariáveis do modelo, calculamos os coeficientes de correlação de Pearson.O coeficiente resulta em um valor entre -1 e 1, onde valores extremos indicam forte associação linear (positiva ou negativa) e valores próximos a zero indicam ausência de relação linear 
 
 Abaixo, apresentamos a matriz numérica de correlação, excluindo a variável resposta `Outcome` (categórica), seguida por sua representação visual através de um correlograma (mapa de calor).
-
-```{r correlacao, fig.width=8, fig.height=6}
+$$r = \frac{\sum_{i=1}^{n} (x_i - \bar{x})(y_i - \bar{y})}{\sqrt{\sum_{i=1}^{n} (x_i - \bar{x})^2 \cdot \sum_{i=1}^{n} (y_i - \bar{y})^2}}$$
+```{r correlacao, fig.width=8, fig.height=6, echo=FALSE}
 # ----------------------------
-# Matriz de Correlação
+# Matriz de Correlação incluindo Outcome
 # ----------------------------
-correlacao <- cor(dados[, -9], use = "complete.obs") # excluindo Outcome
-print(round(correlacao, 2))
+correlacao <- cor(dados, use = "complete.obs")  # não exclui Outcome
 
 # Preparação dos dados para o mapa de calor
 cor_long <- melt(correlacao)
@@ -141,20 +163,33 @@ grafico_cor <- ggplot(cor_long, aes(x = Var1, y = Var2, fill = value)) +
 print(grafico_cor)
 ```
 
+
+
 **Interpretação da Matriz de Correlação:**
 A representação visual em formato de mapa de calor facilita a rápida identificação de multicolinearidade entre as variáveis preditoras. As cores mais intensas (vermelho para correlações positivas e azul para correlações negativas) destacam os pares de variáveis que caminham em conjunto.
 
 Observando os resultados, podemos notar relações biologicamente esperadas, tais como a correlação positiva moderada entre `Age` (Idade) e `Pregnancies` (Gestações), bem como entre `SkinThickness` (Espessura da Pele) e `BMI` (Índice de Massa Corporal). Identificar essas correlações é um passo fundamental antes da modelagem preditiva, pois variáveis altamente correlacionadas podem inserir redundância e inflar a variância dos estimadores em modelos de regressão múltipla.
 
-## 4. Testes de Hipóteses Obrigatórios
+**Observando a matriz de correlação mais de perto:**
+
+```{r visual_reta, echo=FALSE}
+grafico_reg <- ggplot(dados, aes(x = BMI, y = SkinThickness)) +
+  geom_point(alpha = 0.5, color = "darkblue") +
+  geom_smooth(method = "lm", color = "red") +
+  labs(title = "Regressão: SkinThickness ~ BMI")
+  print(grafico_reg)
+```
+
+## 4. Testes de Hipóteses
 
 Na inferência estatística, os testes estatísticos são regras de decisões, vinculadas a um fenômeno da população, que nos possibilitam avaliar, com o auxílio de uma amostra, se determinadas hipóteses podem ser rejeitadas, ou não. A seguir, aplicamos os testes paramétricos e não paramétricos exigidos para investigar as relações entre as variáveis clínicas e o diagnóstico de diabetes.
 
-### 4.1 Teste Qui-Quadrado de Independência
+### 4.1 Teste Qui-Quadrado
 
 O teste qui-quadrado de independência é usado para verificar se existe associação entre duas variáveis qualitativas (categóricas). A hipótese nula afirma independência entre as variáveis, enquanto a hipótese alternativa aponta para associação. Neste estudo, categorizamos as variáveis numéricas `Age` (Idade) e `Glucose` (Glicose) para avaliar suas associações categóricas com o diagnóstico (`Outcome`).
+$$\chi^2 = \sum \frac{(O_i - E_i)^2}{E_i}$$
 
-```{r qui_quadrado}
+```{r qui_quadrado_01}
 # ----------------------------------------
 # Criar variáveis categóricas para teste
 # ----------------------------------------
@@ -179,7 +214,13 @@ print(tabela_idade)
 qui_quadrado_idade <- chisq.test(tabela_idade)
 print("Teste Qui-Quadrado - Idade vs Diabetes:")
 print(qui_quadrado_idade)
+```
 
+**Como o p-value é extremamente pequeno, rejeitamos a hipótese nula (que diz que as variáveis eram independentes).**
+
+O veredito: Existe uma associação estatisticamente significativa entre a faixa etária e o diagnóstico de diabetes nesse conjunto de dados. Em termos práticos, a idade é um fator de risco ou um preditor importante que seu modelo de Machine Learning certamente deve levar em conta.
+
+```{r qui-quadrado2}
 # Teste Qui-Quadrado: Glicose categorizada vs Outcome
 tabela_glicose <- table(dados$glicose_cat, dados$Outcome)
 print("Tabela de contingência - Glicose vs Diabetes:")
@@ -187,12 +228,19 @@ print(tabela_glicose)
 
 qui_quadrado_glicose <- chisq.test(tabela_glicose)
 print("Teste Qui-Quadrado - Glicose vs Diabetes:")
-print(qui_quadrado_glicose)
+  print(qui_quadrado_glicose)
 ```
+
+**O teste indica uma associação altamente significativa** ($p < 0,001$) entre os níveis de glicose e o desfecho clínico, confirmando que a alteração na glicose ($\geq 140$ mg/dL) é um preditor determinante para a presença de diabetes nesta amostra.
 
 ### 4.2 Comparação de Variâncias (Teste F)
 
-Realizamos o teste para comparação de duas variâncias a fim de avaliar a hipótese de homocedasticidade (variâncias iguais) entre os grupos diagnósticos para variáveis contínuas cruciais. A compreensão da dispersão ajuda a caracterizar a heterogeneidade clínica dos pacientes diabéticos em relação aos não diabéticos.
+Realizamos o teste para comparação de duas variâncias a fim de avaliar a hipótese de homocedasticidade (variâncias iguais) entre os grupos diagnósticos para variáveis contínuas cruciais. A compreensão da dispersão ajuda a caracterizar a heterogeneidade clínica dos pacientes diabéticos em relação aos não diabéticos. 
+$$F = \frac{s_1^2}{s_2^2}$$
+
+Onde:
+* $s_1^2$: Variância da primeira amostra.
+* $s_2^2$: Variância da segunda amostra.
 
 ```{r teste_f}
 # ----------------------------------------
@@ -201,27 +249,80 @@ Realizamos o teste para comparação de duas variâncias a fim de avaliar a hip�
 
 # Glicose
 teste_variancia_glucose <- var.test(Glucose ~ Outcome, data = dados)
-print("Teste F para comparação de variâncias - Glicose:")
 print(teste_variancia_glucose)
+```
+**Conclusão:** O teste apresentou um p-valor significativo ($p = 0.00077$), indicando que as variâncias da glicose entre diabéticos e não diabéticos são estatisticamente diferentes.Implicação: Há maior dispersão nos níveis de glicose em um dos grupos. Em testes de comparação de médias (como o Teste t), deve-se obrigatoriamente usar o ajuste de Welch para variâncias desiguais.
 
+```{r teste_f1}
 # BMI
 teste_variancia_bmi <- var.test(BMI ~ Outcome, data = dados)
-print("Teste F para comparação de variâncias - BMI:")
 print(teste_variancia_bmi)
-
-# Idade
-teste_variancia_idade <- var.test(Age ~ Outcome, data = dados)
-print("Teste F para comparação de variâncias - Idade:")
-print(teste_variancia_idade)
 ```
+**Conclusão:** Com um p-valor de $0.7919$, não há evidências para rejeitar a hipótese de igualdade de variâncias.Implicação: O IMC apresenta uma dispersão homogênea entre os grupos (homocedasticidade). Isso valida o uso de modelos estatísticos paramétricos tradicionais que assumem variâncias constantes.
+
 
 ### 4.3 Comparação de Proporções
 
-Para finalizar a análise univariada, aplicamos o teste para comparação de duas proporções[cite: 753]. O objetivo é validar estatisticamente se a proporção de indivíduos diabéticos varia significativamente entre diferentes estratos da amostra (faixas etárias e gênero aproximado pelo histórico de gestações).
+Para finalizar a análise univariada, aplicamos o teste para comparação de duas proporções. O objetivo é validar estatisticamente se a proporção de indivíduos diabéticos varia significativamente entre diferentes estratos da amostra (faixas etárias e gênero aproximado pelo histórico de gestações).
 
-```{r teste_proporcoes}
+```{r teste_proporcoes_graficos, echo=FALSE, message=FALSE, warning=FALSE}
 # ----------------------------------------
-# Comparar proporção de diabéticos entre grupos
+# Comparar pr```{r teste_proporcoes_graficos, echo=TRUE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# ----------------------------------------
+# 1. Preparação e Testes (Seu Código Original)
+# ----------------------------------------
+# Proporção de diabéticos por faixa etária
+tabela_prop_idade <- prop.table(tabela_idade, 1) * 100
+
+# Testes de proporções
+jovens_diabetes <- tabela_idade["Jovem", "1"]
+jovens_total <- sum(tabela_idade["Jovem", ])
+adultos_diabetes <- tabela_idade["Adulto", "1"]
+adultos_total <- sum(tabela_idade["Adulto", ])
+idosos_diabetes <- tabela_idade["Idoso", "1"]
+idosos_total <- sum(tabela_idade["Idoso", ])
+
+teste_prop_jovens_adultos <- prop.test(x = c(jovens_diabetes, adultos_diabetes),
+                                       n = c(jovens_total, adultos_total))
+
+# Gênero (estimado por Pregnancies)
+dados$genero <- ifelse(dados$Pregnancies > 0, "Engravidaram", "Nunca engravidaram")
+tabela_genero <- table(dados$genero, dados$Outcome)
+teste_prop_genero <- prop.test(tabela_genero)
+
+# ----------------------------------------
+# 2. Visualização das Proporções
+# ----------------------------------------
+
+# Gráfico 1: Comparação por Faixa Etária
+df_prop_idade <- as.data.frame(tabela_prop_idade)
+colnames(df_prop_idade) <- c("Faixa_Etaria", "Outcome", "Percentual")
+
+ggplot(df_prop_idade %>% filter(Outcome == "1"), aes(x = Faixa_Etaria, y = Percentual, fill = Faixa_Etaria)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  geom_text(aes(label = paste0(round(Percentual, 1), "%")), vjust = -0.5) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Prevalência de Diabetes por Faixa Etária",
+       subtitle = "Aumento significativo da proporção entre mulheres Jovens e Adultas",
+       x = "Faixa Etária", y = "Proporção de Casos Positivos (%)") +
+  theme_minimal()
+
+# Gráfico 2: Comparação por Gênero
+df_prop_genero <- as.data.frame(prop.table(tabela_genero, 1) * 100)
+colnames(df_prop_genero) <- c("Genero", "Outcome", "Percentual")
+
+ggplot(df_prop_genero %>% filter(Outcome == "1"), aes(x = Genero, y = Percentual, fill = Genero)) +
+  geom_bar(stat = "identity", width = 0.7, show.legend = FALSE) +
+  geom_text(aes(label = paste0(round(Percentual, 1), "%")), vjust = -0.5) +
+  scale_fill_manual(values = c("Engravidaram" = "#e377c2", "Nunca engravidaram" = "#1f77b4")) +
+  labs(title = "Diabetes entras as mulheres que já engravidaram e as que nunca engravidaram",
+       subtitle = paste("p-value do teste:", round(teste_prop_genero$p.value, 4)),
+       x = "Gênero (Estimado)", y = "Proporção de Casos Positivos (%)") +
+  theme_minimal()
 # ----------------------------------------
 
 # Proporção de diabéticos por faixa etária (%)
@@ -229,96 +330,37 @@ tabela_prop_idade <- prop.table(tabela_idade, 1) * 100
 print("Proporção de diabéticos por faixa etária (%):")
 print(round(tabela_prop_idade, 2))
 
-# Teste de proporções - Jovens vs Adultos
-jovens_diabetes <- tabela_idade["Jovem", "1"]
-jovens_total <- sum(tabela_idade["Jovem", ])
-adultos_diabetes <- tabela_idade["Adulto", "1"]
-adultos_total <- sum(tabela_idade["Adulto", ])
-
-teste_prop_jovens_adultos <- prop.test(x = c(jovens_diabetes, adultos_diabetes),
-                                       n = c(jovens_total, adultos_total))
-print("Teste de proporções - Jovens vs Adultos (diabetes):")
-print(teste_prop_jovens_adultos)
-
-# Teste de proporções - Jovens vs Idosos
-idosos_diabetes <- tabela_idade["Idoso", "1"]
-idosos_total <- sum(tabela_idade["Idoso", ])
-
-teste_prop_jovens_idosos <- prop.test(x = c(jovens_diabetes, idosos_diabetes),
-                                      n = c(jovens_total, idosos_total))
-print("Teste de proporções - Jovens vs Idosos (diabetes):")
-print(teste_prop_jovens_idosos)
-
-# ----------------------------------------
-# Teste de proporções - Feminino vs Masculino
-# ----------------------------------------
-# Assumindo que Pregnancies > 0 indica sexo feminino na base
-dados$genero <- ifelse(dados$Pregnancies > 0, "Feminino", "Masculino")
-
-tabela_genero <- table(dados$genero, dados$Outcome)
-print("Tabela de contingência - Gênero vs Diabetes:")
-print(tabela_genero)
-
-teste_prop_genero <- prop.test(x = c(tabela_genero["Feminino", "1"], 
-                                     tabela_genero["Masculino", "1"]),
-                               n = c(sum(tabela_genero["Feminino", ]),
-                                     sum(tabela_genero["Masculino", ])))
-print("Teste de proporções - Feminino vs Masculino (diabetes):")
-print(teste_prop_genero)
 ```
 
 ## 5. Resumo dos Testes Estatísticos
 
-Para facilitar a visualização e interpretação dos resultados inferenciais, consolidamos os p-valores de todos os testes realizados em uma única tabela. 
+**Resumo da Sessão: Testes de Hipóteses**
 
-Adotando o nível de significância padrão de 5% ($\alpha = 0,05$), a coluna de conclusão aponta automaticamente se há evidência estatística suficiente para rejeitar a hipótese nula (resultado **SIGNIFICATIVO**) ou não.
+Nesta etapa, a análise deixou de ser meramente descritiva para se tornar inferencial, utilizando testes estatísticos para validar associações e diferenças observadas na amostra. Os principais achados foram:
 
-```{r resumo_testes_tabela, echo=FALSE}
-# Carregando o pacote knitr para gerar tabelas formatadas
-library(knitr)
+**Associações Categóricas (Qui-Quadrado)**:O teste confirmou, com alto nível de significância ($p < 0,001$), que o diagnóstico de diabetes não é independente da Idade e dos níveis de Glicose. Observou-se que a transição da faixa "Jovem" para "Adulta" e o aumento da glicemia para níveis acima de $140$ mg/dL são fatores críticos que elevam a probabilidade de presença da doença.
 
-# Criando um data frame (tabela) com os resultados extraídos das variáveis
-tabela_resultados <- data.frame(
-  Metodologia = c("Qui-Quadrado", "Qui-Quadrado", 
-                  "Teste F (Variâncias)", "Teste F (Variâncias)", "Teste F (Variâncias)", 
-                  "Teste de Proporções", "Teste de Proporções", "Teste de Proporções"),
-  
-  Comparação = c("Idade vs Diabetes", "Glicose (Cat) vs Diabetes", 
-                 "Glicose (Diabéticos vs Não)", "BMI (Diabéticos vs Não)", "Idade (Diabéticos vs Não)",
-                 "Jovens vs Adultos", "Jovens vs Idosos", "Feminino vs Masculino"),
-  
-  `P_Valor` = c(qui_quadrado_idade$p.value, qui_quadrado_glicose$p.value,
-                teste_variancia_glucose$p.value, teste_variancia_bmi$p.value, teste_variancia_idade$p.value,
-                teste_prop_jovens_adultos$p.value, teste_prop_jovens_idosos$p.value, teste_prop_genero$p.value)
-)
+**Homogeneidade de Variâncias (Teste F):**
 
-# Arredondando o P-Valor para 5 casas decimais para ficar elegante
-tabela_resultados$P_Valor <- round(tabela_resultados$P_Valor, 5)
+Investigou-se a dispersão dos dados entre os grupos com e sem diabetes. Identificou-se variâncias desiguais na variável Glicose, o que exige cautela e ajustes em testes t de comparação de médias. Já para o BMI, as variâncias mostraram-se estáveis, permitindo comparações paramétricas diretas.
 
-# Criando a regra de decisão automática
-tabela_resultados$Conclusão <- ifelse(tabela_resultados$P_Valor < 0.05, 
-                                      "SIGNIFICATIVO", 
-                                      "Não Significativo")
 
-# Gerando a tabela formatada no relatório
-kable(tabela_resultados, 
-      caption = "Tabela 1: Resumo dos p-valores e conclusões dos testes de hipóteses.",
-      align = "llcl")
-```
+**Diferenças de Proporções (Teste Z):**
 
-## 6. Análise de Regressão Linear Simples
+A análise de proporções detalhou o impacto dos fatores demográficos e clínicos. Ficou evidente o aumento drástico na prevalência de diabetes em grupos de maior idade. Além disso, a estratificação baseada no histórico gestacional (mulheres que já engravidaram vs. as que nunca engravidaram) forneceu uma base estatística para entender como variáveis de histórico biológico se comportam como preditores de risco na população estudada.
 
-A análise de regressão linear simples visa estabelecer uma relação funcional matemática entre uma variável preditora (independente) e uma variável resposta (dependente)[cite: 37, 38]. Baseado no modelo teórico da reta $y = \beta_0 + \beta_1 x + \epsilon$[cite: 168], ajustamos um modelo pelo Método dos Mínimos Quadrados (MMQ) para verificar como o Índice de Massa Corporal (BMI) pode explicar as variações nos níveis de Glicose (Glucose).
+**Conclusão da Sessão: **
 
-O sumário do modelo fornece os coeficientes estimados ($\hat{\beta}_0$ e $\hat{\beta}_1$) e o coeficiente de determinação ($R^2$), que indica a proporção da variação da variável dependente que é explicada pelo modelo[cite: 232].
+Os testes validaram que as variáveis selecionadas possuem forte fundamentação estatística para compor um modelo preditivo, garantindo que as relações observadas não são fruto do acaso, mas sim características intrínsecas dos dados biológicos analisados.
 
-```{r regressao_linear, fig.width=8, fig.height=5}
+## 6. Análise de Regressão Linear
+
+A análise de regressão linear simples visa estabelecer uma relação funcional matemática entre uma variável preditora (independente) e uma variável resposta (dependente). Baseado no modelo teórico da reta $y = \beta_0 + \beta_1 x + \epsilon$, ajustamos um modelo pelo Método dos Mínimos Quadrados (MMQ) para verificar como o Índice de Massa Corporal (BMI) pode explicar as variações na Espessura da Dobra Cutânea (SkinThickness).O sumário do modelo fornece os coeficientes estimados ($\hat{\beta}_0$ e $\hat{\beta}_1$) e o coeficiente de determinação ($R^2$), que indica a proporção da variação da variável dependente que é explicada pelo modelo.
+
+```{r regressao_linear, fig.width=8, fig.height=5, echo=FALSE}
 # ----------------------------
 # Ajuste do Modelo Linear
 # ----------------------------
-modelo_lm <- lm(Glucose ~ BMI, data = dados)
-summary(modelo_lm)
-
 # ----------------------------
 # Gráfico com a Reta de Regressão
 # ----------------------------
@@ -334,70 +376,35 @@ print(grafico_reg)
 A reta de regressão (em vermelho) ilustra a tendência central da relação. A inclinação positiva da reta ($\hat{\beta}_1 > 0$) sugere que o aumento do BMI está linearmente associado à espessura da pele nos indivíduos na amostra analisada.
 
 
-## 7. Regressão Logística (Modelo Preditivo Principal)
+## 7 Conclusão
 
-Como a nossa variável de interesse principal (`Outcome`) é dicotômica (presença ou ausência de diabetes), a regressão linear simples não é adequada. Para fins de predição diagnóstica, construímos um modelo de Regressão Logística Múltipla. 
+  <p>
+    A análise estatística realizada sobre o conjunto de dados da população Pima forneceu evidências sólidas sobre os fatores de risco associados ao Diabetes Tipo 2. Através da exploração inicial e do tratamento de dados, foi possível corrigir inconsistências biológicas, garantindo que a modelagem subsequente fosse baseada em dados clinicamente verossímeis.
+  </p>
 
-O banco de dados foi particionado em dados de treinamento (80%) e dados de teste (20%). As variáveis preditoras contínuas foram padronizadas (escala Z) para garantir que variáveis com diferentes grandezas numéricas não enviesem a estimação dos parâmetros.
+  <p>Os principais achados deste estudo indicam que:</p>
+  <ul>
+    <li><strong>Fatores Determinantes:</strong> Os testes Qui-Quadrado e de Proporções confirmaram que a Idade e a Glicose não são apenas variáveis isoladas, mas preditores com forte associação diagnóstica.</li>
+    <li><strong>Estrutura dos Dados:</strong> A identificação de heterocedasticidade na Glicose (via Teste F) alerta para a necessidade de modelos que suportem variâncias desiguais, enquanto a homocedasticidade no BMI simplifica a análise de dispersão para essa variável.</li>
+    <li><strong>Correlações Biológicas:</strong> A Regressão Linear e a Matriz de Pearson revelaram interdependências importantes, como a relação direta entre o BMI e a SkinThickness. Essas correlações mostram que o acúmulo de tecido adiposo se manifesta de forma mensurável e linear na amostra estudada.</li>
+    <li><strong>Perfil de Risco:</strong> A análise do histórico gestacional (mulheres que já engravidaram vs. as que nunca engravidaram) trouxe uma camada adicional de personalização ao entendimento do risco, mostrando que variáveis de histórico de vida são fundamentais para a estratificação de pacientes.</li>
+  </ul>
 
-```{r regressao_logistica}
-# ----------------------------
-# Preparação e Divisão dos Dados
-# ----------------------------
-dados$Outcome <- as.factor(dados$Outcome)
+  <hr>
 
-# Separação das matrizes de covariáveis (X) e vetor resposta (y)
-X <- dados %>% dplyr::select(Pregnancies, Glucose, BloodPressure, SkinThickness,
-                             Insulin, BMI, DiabetesPedigreeFunction, Age)
-y <- dados$Outcome
-X <- data.frame(lapply(X, as.numeric))
-
-# Divisão treino/teste (80/20)
-set.seed(42) # Semente fixada para reprodutibilidade dos resultados
-amostra <- sample(1:nrow(dados), 0.8 * nrow(dados))
-
-X_train <- X[amostra, ]
-X_test  <- X[-amostra, ]
-y_train <- y[amostra]
-y_test  <- y[-amostra]
-
-# ----------------------------
-# Padronização (Z-Score Normalization)
-# ----------------------------
-media <- apply(X_train, 2, mean)
-desvio <- apply(X_train, 2, sd)
-
-X_train_scaled <- scale(X_train, center = media, scale = desvio)
-X_test_scaled  <- scale(X_test, center = media, scale = desvio)
-
-# ----------------------------
-# Ajuste do Modelo e Predição
-# ----------------------------
-modelo_log <- glm(y_train ~ ., 
-                  data = as.data.frame(X_train_scaled), 
-                  family = binomial)
-
-# Resumo dos coeficientes logísticos
-summary(modelo_log)
-
-probabilidades <- predict(modelo_log, 
-                          newdata = as.data.frame(X_test_scaled), 
-                          type = "response")
-
-# Classificação utilizando threshold convencional de 0.5 (50%)
-predicoes <- ifelse(probabilidades > 0.5, 1, 0)
-predicoes <- as.factor(predicoes)
-
-# ----------------------------
-# Matriz de Confusão e Acurácia
-# ----------------------------
-matriz <- table(Predito = predicoes, Real = y_test)
-print("Matriz de Confusão (Dados de Teste):")
-print(matriz)
-
-acuracia <- sum(diag(matriz)) / sum(matriz)
-cat("Acurácia do modelo (Regressão Logística):", round(acuracia * 100, 2), "%\n")
-```
-
-**Conclusão do Modelo Preditivo:**
-O modelo de Regressão Logística demonstrou uma performance preditiva satisfatória, alcançando uma acurácia de aproximadamente 77,27% na base de dados de teste (dados invisíveis ao modelo durante o treinamento). A matriz de confusão corrobora que as covariáveis clínicas levantadas, em especial a glicose e o BMI, possuem capacidade preditiva clinicamente relevante para a detecção da diabetes.
+  <p><strong>Considerações Finais:</strong></p>
+  <ul>
+    <li>Os resultados obtidos rejeitam as hipóteses nulas de independência e igualdade para as principais variáveis clínicas.</li>
+    <li>O dataset possui uma estrutura rica e estatisticamente confiável.</li>
+    <li>Este trabalho serve como base rigorosa para o desenvolvimento de algoritmos de Machine Learning, visto que as <em>features</em> agora possuem validação estatística de sua importância preditiva.</li>
+  </ul>
+  
+  
+## Referências
+  <ul>
+    <li><strong>Dataset Original:</strong> SMITH, J.W.; EVERHART, J.E.; DICKSON, W.C.; KNOWLER, W.C.; JOHANNES, R.S. <em>Using the ADAP Learning Algorithm to Forecast the Onset of Diabetes Mellitus.</em> In: Proceedings of the Symposium on Computer Applications and Medical Care. IEEE Computer Society Press, 1988. pp. 261–265. (Disponível no Repositório UCI Machine Learning).</li>
+    <li><strong>Linguagem e Ferramentas:</strong> R CORE TEAM. <em>R: A Language and Environment for Statistical Computing.</em> R Foundation for Statistical Computing, Vienna, Austria, 2026. Disponível em: <a href="https://www.R-project.org/">https://www.R-project.org/</a>.</li>
+    <li><strong>Estatística Inferencial:</strong> MORETTIN, P. A.; BUSSAB, W. O. <em>Estatística Básica.</em> 9. ed. São Paulo: Saraiva, 2017. (Referência para Teste Qui-Quadrado e Teste F).</li>
+    <li><strong>Visualização de Dados:</strong> WICKHAM, H. <em>ggplot2: Elegant Graphics for Data Analysis.</em> Springer-Verlag New York, 2016.</li>PECK, E. A.; VINING, G. G. <em>Introduction to Linear Regression Analysis.</em> 6th ed. Wiley, 2021.</li>
+  </ul>
+</section>
