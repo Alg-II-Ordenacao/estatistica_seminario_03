@@ -1,5 +1,5 @@
 ---
-title: "Análise Estatística e Preditiva de  Diabetes Tipo 2 na População Indígena Pima"
+title: "Análise Estatística e Preditição de  Diabetes Tipo 2 na População Indígena Pima"
 author: "Matheus Cândido e Fernando Simão"
 date: "18 de março de 2026"
 output: 
