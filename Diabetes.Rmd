@@ -145,3 +145,124 @@ print(grafico_cor)
 A representação visual em formato de mapa de calor facilita a rápida identificação de multicolinearidade entre as variáveis preditoras. [cite_start]As cores mais intensas (vermelho para correlações positivas [cite: 110] [cite_start]e azul para correlações negativas [cite: 109]) destacam os pares de variáveis que caminham em conjunto.
 
 Observando os resultados, podemos notar relações biologicamente esperadas, tais como a correlação positiva moderada entre `Age` (Idade) e `Pregnancies` (Gestações), bem como entre `SkinThickness` (Espessura da Pele) e `BMI` (Índice de Massa Corporal). Identificar essas correlações é um passo fundamental antes da modelagem preditiva, pois variáveis altamente correlacionadas podem inserir redundância e inflar a variância dos estimadores em modelos de regressão múltipla.
+
+## 7. Testes de Hipóteses Obrigatórios
+
+[cite_start]Na inferência estatística, os testes estatísticos são regras de decisões, vinculadas a um fenômeno da população, que nos possibilitam avaliar, com o auxílio de uma amostra, se determinadas hipóteses podem ser rejeitadas, ou não[cite: 623]. A seguir, aplicamos os testes paramétricos e não paramétricos exigidos para investigar as relações entre as variáveis clínicas e o diagnóstico de diabetes.
+
+### 7.1 Teste Qui-Quadrado de Independência
+
+[cite_start]O teste qui-quadrado de independência é usado para verificar se existe associação entre duas variáveis qualitativas (categóricas)[cite: 555]. [cite_start]A hipótese nula afirma independência entre as variáveis, enquanto a hipótese alternativa aponta para associação[cite: 556]. Neste estudo, categorizamos as variáveis numéricas `Age` (Idade) e `Glucose` (Glicose) para avaliar suas associações categóricas com o diagnóstico (`Outcome`).
+
+```{r qui_quadrado}
+# ----------------------------------------
+# Criar variáveis categóricas para teste
+# ----------------------------------------
+
+# Categorizar idade (jovem: <30, adulto: 30-50, idoso: >50)
+dados$faixa_etaria <- cut(dados$Age, 
+                          breaks = c(0, 30, 50, 100), 
+                          labels = c("Jovem", "Adulto", "Idoso"))
+
+# Categorizar glicose (normal: <140, alterada: >=140)
+dados$glicose_cat <- ifelse(dados$Glucose < 140, "Normal", "Alterada")
+
+# ----------------------------------------
+# Execução dos Testes Qui-Quadrado
+# ----------------------------------------
+
+# Teste Qui-Quadrado: Faixa etária vs Outcome
+tabela_idade <- table(dados$faixa_etaria, dados$Outcome)
+print("Tabela de contingência - Idade vs Diabetes:")
+print(tabela_idade)
+
+qui_quadrado_idade <- chisq.test(tabela_idade)
+print("Teste Qui-Quadrado - Idade vs Diabetes:")
+print(qui_quadrado_idade)
+
+# Teste Qui-Quadrado: Glicose categorizada vs Outcome
+tabela_glicose <- table(dados$glicose_cat, dados$Outcome)
+print("Tabela de contingência - Glicose vs Diabetes:")
+print(tabela_glicose)
+
+qui_quadrado_glicose <- chisq.test(tabela_glicose)
+print("Teste Qui-Quadrado - Glicose vs Diabetes:")
+print(qui_quadrado_glicose)
+```
+
+### 7.2 Comparação de Variâncias (Teste F)
+
+Realizamos o teste para comparação de duas variâncias [cite: 709] a fim de avaliar a hipótese de homocedasticidade (variâncias iguais) entre os grupos diagnósticos para variáveis contínuas cruciais. A compreensão da dispersão ajuda a caracterizar a heterogeneidade clínica dos pacientes diabéticos em relação aos não diabéticos.
+
+```{r teste_f}
+# ----------------------------------------
+# Comparar variância entre diabéticos e não diabéticos
+# ----------------------------------------
+
+# Glicose
+teste_variancia_glucose <- var.test(Glucose ~ Outcome, data = dados)
+print("Teste F para comparação de variâncias - Glicose:")
+print(teste_variancia_glucose)
+
+# BMI
+teste_variancia_bmi <- var.test(BMI ~ Outcome, data = dados)
+print("Teste F para comparação de variâncias - BMI:")
+print(teste_variancia_bmi)
+
+# Idade
+teste_variancia_idade <- var.test(Age ~ Outcome, data = dados)
+print("Teste F para comparação de variâncias - Idade:")
+print(teste_variancia_idade)
+```
+
+### 7.3 Comparação de Proporções
+
+[cite_start]Para finalizar a análise univariada, aplicamos o teste para comparação de duas proporções[cite: 753]. O objetivo é validar estatisticamente se a proporção de indivíduos diabéticos varia significativamente entre diferentes estratos da amostra (faixas etárias e gênero aproximado pelo histórico de gestações).
+
+```{r teste_proporcoes}
+# ----------------------------------------
+# Comparar proporção de diabéticos entre grupos
+# ----------------------------------------
+
+# Proporção de diabéticos por faixa etária (%)
+tabela_prop_idade <- prop.table(tabela_idade, 1) * 100
+print("Proporção de diabéticos por faixa etária (%):")
+print(round(tabela_prop_idade, 2))
+
+# Teste de proporções - Jovens vs Adultos
+jovens_diabetes <- tabela_idade["Jovem", "1"]
+jovens_total <- sum(tabela_idade["Jovem", ])
+adultos_diabetes <- tabela_idade["Adulto", "1"]
+adultos_total <- sum(tabela_idade["Adulto", ])
+
+teste_prop_jovens_adultos <- prop.test(x = c(jovens_diabetes, adultos_diabetes),
+                                       n = c(jovens_total, adultos_total))
+print("Teste de proporções - Jovens vs Adultos (diabetes):")
+print(teste_prop_jovens_adultos)
+
+# Teste de proporções - Jovens vs Idosos
+idosos_diabetes <- tabela_idade["Idoso", "1"]
+idosos_total <- sum(tabela_idade["Idoso", ])
+
+teste_prop_jovens_idosos <- prop.test(x = c(jovens_diabetes, idosos_diabetes),
+                                      n = c(jovens_total, idosos_total))
+print("Teste de proporções - Jovens vs Idosos (diabetes):")
+print(teste_prop_jovens_idosos)
+
+# ----------------------------------------
+# Teste de proporções - Feminino vs Masculino
+# ----------------------------------------
+# Assumindo que Pregnancies > 0 indica sexo feminino na base
+dados$genero <- ifelse(dados$Pregnancies > 0, "Feminino", "Masculino")
+
+tabela_genero <- table(dados$genero, dados$Outcome)
+print("Tabela de contingência - Gênero vs Diabetes:")
+print(tabela_genero)
+
+teste_prop_genero <- prop.test(x = c(tabela_genero["Feminino", "1"], 
+                                     tabela_genero["Masculino", "1"]),
+                               n = c(sum(tabela_genero["Feminino", ]),
+                                     sum(tabela_genero["Masculino", ])))
+print("Teste de proporções - Feminino vs Masculino (diabetes):")
+print(teste_prop_genero)
+```
