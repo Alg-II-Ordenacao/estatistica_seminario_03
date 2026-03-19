@@ -1,5 +1,5 @@
 ---
-title: "Análise Estatística e Preditição de Diabetes Tipo 2 na População Indígena Pima"
+title: "Análise Estatística e Preditição de Diabetes Tipo 2 em Mulheres da População Indígena Pima"
 author: "Matheus Cândido e Fernando Simão"
 date: "18 de março de 2026"
 output: 
@@ -218,7 +218,7 @@ print(qui_quadrado_idade)
 
 **Como o p-value é extremamente pequeno, rejeitamos a hipótese nula (que diz que as variáveis eram independentes).**
 
-O veredito: Existe uma associação estatisticamente significativa entre a faixa etária e o diagnóstico de diabetes nesse conjunto de dados. Em termos práticos, a idade é um fator de risco ou um preditor importante que seu modelo de Machine Learning certamente deve levar em conta.
+O veredito: Existe uma associação estatisticamente significativa entre a faixa etária e o diagnóstico de diabetes nesse conjunto de dados. Em termos práticos, a idade é um fator de risco ou um preditor importante que devemos levar em conta.
 
 ```{r qui-quadrado2}
 # Teste Qui-Quadrado: Glicose categorizada vs Outcome
