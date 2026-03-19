@@ -112,7 +112,7 @@ Nota-se claramente que os pontos vermelhos tendem a se aglomerar no quadrante su
 
 ## 6. Análise de Correlação Linear
 
-[cite_start]Para compreender a estrutura de dependência linear entre as covariáveis do modelo, calculamos os coeficientes de correlação de Pearson. [cite_start]O coeficiente resulta em um valor entre -1 e 1, onde valores extremos indicam forte associação linear (positiva ou negativa) e valores próximos a zero indicam ausência de relação linear[cite: 106, 107, 108]. 
+Para compreender a estrutura de dependência linear entre as covariáveis do modelo, calculamos os coeficientes de correlação de Pearson.O coeficiente resulta em um valor entre -1 e 1, onde valores extremos indicam forte associação linear (positiva ou negativa) e valores próximos a zero indicam ausência de relação linear 
 
 Abaixo, apresentamos a matriz numérica de correlação, excluindo a variável resposta `Outcome` (categórica), seguida por sua representação visual através de um correlograma (mapa de calor).
 
@@ -142,17 +142,17 @@ print(grafico_cor)
 ```
 
 **Interpretação da Matriz de Correlação:**
-A representação visual em formato de mapa de calor facilita a rápida identificação de multicolinearidade entre as variáveis preditoras. [cite_start]As cores mais intensas (vermelho para correlações positivas [cite: 110] [cite_start]e azul para correlações negativas [cite: 109]) destacam os pares de variáveis que caminham em conjunto.
+A representação visual em formato de mapa de calor facilita a rápida identificação de multicolinearidade entre as variáveis preditoras. As cores mais intensas (vermelho para correlações positivas e azul para correlações negativas) destacam os pares de variáveis que caminham em conjunto.
 
 Observando os resultados, podemos notar relações biologicamente esperadas, tais como a correlação positiva moderada entre `Age` (Idade) e `Pregnancies` (Gestações), bem como entre `SkinThickness` (Espessura da Pele) e `BMI` (Índice de Massa Corporal). Identificar essas correlações é um passo fundamental antes da modelagem preditiva, pois variáveis altamente correlacionadas podem inserir redundância e inflar a variância dos estimadores em modelos de regressão múltipla.
 
 ## 7. Testes de Hipóteses Obrigatórios
 
-[cite_start]Na inferência estatística, os testes estatísticos são regras de decisões, vinculadas a um fenômeno da população, que nos possibilitam avaliar, com o auxílio de uma amostra, se determinadas hipóteses podem ser rejeitadas, ou não[cite: 623]. A seguir, aplicamos os testes paramétricos e não paramétricos exigidos para investigar as relações entre as variáveis clínicas e o diagnóstico de diabetes.
+Na inferência estatística, os testes estatísticos são regras de decisões, vinculadas a um fenômeno da população, que nos possibilitam avaliar, com o auxílio de uma amostra, se determinadas hipóteses podem ser rejeitadas, ou não. A seguir, aplicamos os testes paramétricos e não paramétricos exigidos para investigar as relações entre as variáveis clínicas e o diagnóstico de diabetes.
 
 ### 7.1 Teste Qui-Quadrado de Independência
 
-[cite_start]O teste qui-quadrado de independência é usado para verificar se existe associação entre duas variáveis qualitativas (categóricas)[cite: 555]. [cite_start]A hipótese nula afirma independência entre as variáveis, enquanto a hipótese alternativa aponta para associação[cite: 556]. Neste estudo, categorizamos as variáveis numéricas `Age` (Idade) e `Glucose` (Glicose) para avaliar suas associações categóricas com o diagnóstico (`Outcome`).
+O teste qui-quadrado de independência é usado para verificar se existe associação entre duas variáveis qualitativas (categóricas). A hipótese nula afirma independência entre as variáveis, enquanto a hipótese alternativa aponta para associação. Neste estudo, categorizamos as variáveis numéricas `Age` (Idade) e `Glucose` (Glicose) para avaliar suas associações categóricas com o diagnóstico (`Outcome`).
 
 ```{r qui_quadrado}
 # ----------------------------------------
@@ -192,7 +192,7 @@ print(qui_quadrado_glicose)
 
 ### 7.2 Comparação de Variâncias (Teste F)
 
-Realizamos o teste para comparação de duas variâncias [cite: 709] a fim de avaliar a hipótese de homocedasticidade (variâncias iguais) entre os grupos diagnósticos para variáveis contínuas cruciais. A compreensão da dispersão ajuda a caracterizar a heterogeneidade clínica dos pacientes diabéticos em relação aos não diabéticos.
+Realizamos o teste para comparação de duas variâncias a fim de avaliar a hipótese de homocedasticidade (variâncias iguais) entre os grupos diagnósticos para variáveis contínuas cruciais. A compreensão da dispersão ajuda a caracterizar a heterogeneidade clínica dos pacientes diabéticos em relação aos não diabéticos.
 
 ```{r teste_f}
 # ----------------------------------------
