@@ -266,3 +266,42 @@ teste_prop_genero <- prop.test(x = c(tabela_genero["Feminino", "1"],
 print("Teste de proporções - Feminino vs Masculino (diabetes):")
 print(teste_prop_genero)
 ```
+
+## 8. Resumo dos Testes Estatísticos
+
+Para facilitar a visualização e interpretação dos resultados inferenciais, consolidamos os p-valores de todos os testes realizados em uma única tabela. 
+
+Adotando o nível de significância padrão de 5% ($\alpha = 0,05$), a coluna de conclusão aponta automaticamente se há evidência estatística suficiente para rejeitar a hipótese nula (resultado **SIGNIFICATIVO**) ou não.
+
+```{r resumo_testes_tabela, echo=FALSE}
+# Carregando o pacote knitr para gerar tabelas formatadas
+library(knitr)
+
+# Criando um data frame (tabela) com os resultados extraídos das variáveis
+tabela_resultados <- data.frame(
+  Metodologia = c("Qui-Quadrado", "Qui-Quadrado", 
+                  "Teste F (Variâncias)", "Teste F (Variâncias)", "Teste F (Variâncias)", 
+                  "Teste de Proporções", "Teste de Proporções", "Teste de Proporções"),
+  
+  Comparação = c("Idade vs Diabetes", "Glicose (Cat) vs Diabetes", 
+                 "Glicose (Diabéticos vs Não)", "BMI (Diabéticos vs Não)", "Idade (Diabéticos vs Não)",
+                 "Jovens vs Adultos", "Jovens vs Idosos", "Feminino vs Masculino"),
+  
+  `P_Valor` = c(qui_quadrado_idade$p.value, qui_quadrado_glicose$p.value,
+                teste_variancia_glucose$p.value, teste_variancia_bmi$p.value, teste_variancia_idade$p.value,
+                teste_prop_jovens_adultos$p.value, teste_prop_jovens_idosos$p.value, teste_prop_genero$p.value)
+)
+
+# Arredondando o P-Valor para 5 casas decimais para ficar elegante
+tabela_resultados$P_Valor <- round(tabela_resultados$P_Valor, 5)
+
+# Criando a regra de decisão automática
+tabela_resultados$Conclusão <- ifelse(tabela_resultados$P_Valor < 0.05, 
+                                      "SIGNIFICATIVO", 
+                                      "Não Significativo")
+
+# Gerando a tabela formatada no relatório
+kable(tabela_resultados, 
+      caption = "Tabela 1: Resumo dos p-valores e conclusões dos testes de hipóteses.",
+      align = "llcl")
+```
