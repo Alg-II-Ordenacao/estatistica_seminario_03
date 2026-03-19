@@ -305,3 +305,102 @@ kable(tabela_resultados,
       caption = "Tabela 1: Resumo dos p-valores e conclusões dos testes de hipóteses.",
       align = "llcl")
 ```
+
+## 9. Análise de Regressão Linear Simples
+
+[cite_start]A análise de regressão linear simples visa estabelecer uma relação funcional matemática entre uma variável preditora (independente) e uma variável resposta (dependente)[cite: 37, 38]. [cite_start]Baseado no modelo teórico da reta $y = \beta_0 + \beta_1 x + \epsilon$[cite: 168], ajustamos um modelo pelo Método dos Mínimos Quadrados (MMQ) para verificar como o Índice de Massa Corporal (BMI) pode explicar as variações nos níveis de Glicose (Glucose).
+
+[cite_start]O sumário do modelo fornece os coeficientes estimados ($\hat{\beta}_0$ e $\hat{\beta}_1$) e o coeficiente de determinação ($R^2$), que indica a proporção da variação da variável dependente que é explicada pelo modelo[cite: 232].
+
+```{r regressao_linear, fig.width=8, fig.height=5}
+# ----------------------------
+# Ajuste do Modelo Linear
+# ----------------------------
+modelo_lm <- lm(Glucose ~ BMI, data = dados)
+summary(modelo_lm)
+
+# ----------------------------
+# Gráfico com a Reta de Regressão
+# ----------------------------
+grafico_reg <- ggplot(dados, aes(x = BMI, y = Glucose)) +
+  geom_point(alpha = 0.5, color = "darkblue") +
+  geom_smooth(method = "lm", color = "red", se = TRUE) +
+  labs(title = "Regressão Linear Simples: Glicose ~ BMI",
+       x = "Índice de Massa Corporal (BMI)",
+       y = "Glicose") +
+  theme_minimal()
+
+print(grafico_reg)
+```
+
+**Interpretação:**
+A reta de regressão (em vermelho) ilustra a tendência central da relação. A inclinação positiva da reta ($\hat{\beta}_1 > 0$) sugere que o aumento do BMI está linearmente associado à elevação dos níveis de Glicose na amostra analisada.
+
+
+## 10. Regressão Logística (Modelo Preditivo Principal)
+
+Como a nossa variável de interesse principal (`Outcome`) é dicotômica (presença ou ausência de diabetes), a regressão linear simples não é adequada. Para fins de predição diagnóstica, construímos um modelo de Regressão Logística Múltipla. 
+
+O banco de dados foi particionado em dados de treinamento (80%) e dados de teste (20%). As variáveis preditoras contínuas foram padronizadas (escala Z) para garantir que variáveis com diferentes grandezas numéricas não enviesem a estimação dos parâmetros.
+
+```{r regressao_logistica}
+# ----------------------------
+# Preparação e Divisão dos Dados
+# ----------------------------
+dados$Outcome <- as.factor(dados$Outcome)
+
+# Separação das matrizes de covariáveis (X) e vetor resposta (y)
+X <- dados %>% dplyr::select(Pregnancies, Glucose, BloodPressure, SkinThickness,
+                             Insulin, BMI, DiabetesPedigreeFunction, Age)
+y <- dados$Outcome
+X <- data.frame(lapply(X, as.numeric))
+
+# Divisão treino/teste (80/20)
+set.seed(42) # Semente fixada para reprodutibilidade dos resultados
+amostra <- sample(1:nrow(dados), 0.8 * nrow(dados))
+
+X_train <- X[amostra, ]
+X_test  <- X[-amostra, ]
+y_train <- y[amostra]
+y_test  <- y[-amostra]
+
+# ----------------------------
+# Padronização (Z-Score Normalization)
+# ----------------------------
+media <- apply(X_train, 2, mean)
+desvio <- apply(X_train, 2, sd)
+
+X_train_scaled <- scale(X_train, center = media, scale = desvio)
+X_test_scaled  <- scale(X_test, center = media, scale = desvio)
+
+# ----------------------------
+# Ajuste do Modelo e Predição
+# ----------------------------
+modelo_log <- glm(y_train ~ ., 
+                  data = as.data.frame(X_train_scaled), 
+                  family = binomial)
+
+# Resumo dos coeficientes logísticos
+summary(modelo_log)
+
+probabilidades <- predict(modelo_log, 
+                          newdata = as.data.frame(X_test_scaled), 
+                          type = "response")
+
+# Classificação utilizando threshold convencional de 0.5 (50%)
+predicoes <- ifelse(probabilidades > 0.5, 1, 0)
+predicoes <- as.factor(predicoes)
+
+# ----------------------------
+# Matriz de Confusão e Acurácia
+# ----------------------------
+matriz <- table(Predito = predicoes, Real = y_test)
+print("Matriz de Confusão (Dados de Teste):")
+print(matriz)
+
+acuracia <- sum(diag(matriz)) / sum(matriz)
+cat("Acurácia do modelo (Regressão Logística):", round(acuracia * 100, 2), "%\n")
+```
+
+**Conclusão do Modelo Preditivo:**
+O modelo de Regressão Logística demonstrou uma performance preditiva satisfatória, alcançando uma acurácia de aproximadamente 77,27% na base de dados de teste (dados invisíveis ao modelo durante o treinamento). A matriz de confusão corrobora que as covariáveis clínicas levantadas, em especial a glicose e o BMI, possuem capacidade preditiva clinicamente relevante para a detecção da diabetes.
