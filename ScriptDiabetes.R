@@ -264,12 +264,10 @@ modelo_lm <- lm(Glucose ~ BMI, data = dados)
 summary(modelo_lm)
 
 # Gráfico com regressão
-grafico_reg <- ggplot(dados, aes(x = BMI, y = Glucose)) +
-  geom_point(aes(color = as.factor(Outcome)), alpha = 0.6) +
-  geom_smooth(method = "lm", se = TRUE, color = "black") +
-  scale_color_manual(values = c("blue", "red"), name = "Diabetes", 
-                     labels = c("Não", "Sim")) +
-  ggtitle("Regressão Linear: Glicose ~ BMI")
+grafico_reg <- ggplot(dados, aes(x = BMI, y = SkinThickness)) +
+  geom_point(alpha = 0.5, color = "darkblue") +
+  geom_smooth(method = "lm", color = "red") +
+  labs(title = "Regressão: SkinThickness ~ BMI")
 
 print(grafico_reg) # <-- Adicione o print() aqui!
 # =====================================================
