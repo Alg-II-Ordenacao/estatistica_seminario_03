@@ -51,7 +51,7 @@ for (col in cols_zeros) {
 }
 ```
 
-## 4. Estatística Descritiva
+## 1. Estatística Descritiva
 
 Para fundamentar as análises inferenciais subsequentes, foi conduzida uma exploração inicial baseada na estatística descritiva dos dados coletados. [cite_start]Após o tratamento de inconsistências biológicas (substituição de zeros espúrios por valores imputados com base na mediana dos agrupamentos diagnósticos), extraímos as medidas de posição e de dispersão fundamentais.
 
@@ -72,7 +72,7 @@ dados %>%
                    na.rm = TRUE))
 ```
 
-## 5. Visualização de Dados (Gráficos)
+## 2. Visualização de Dados (Gráficos)
 
 A exploração visual dos dados é uma etapa indispensável na análise estatística, pois permite a identificação imediata de padrões de distribuição, assimetrias e potenciais agrupamentos (clusters) entre as variáveis de interesse. A seguir, apresentamos a distribuição da variável Glicose e a relação bivariada entre o Índice de Massa Corporal (BMI) e a Glicose, estratificada pelo diagnóstico clínico.
 
@@ -110,7 +110,7 @@ Este diagrama de dispersão avalia a relação simultânea entre duas variáveis
 
 Nota-se claramente que os pontos vermelhos tendem a se aglomerar no quadrante superior direito do plano cartesiano. Isso evidencia, visualmente, que indivíduos que apresentam simultaneamente maiores índices de massa corporal e níveis glicêmicos mais elevados possuem uma prevalência consideravelmente maior de diagnóstico positivo para a doença. Em contrapartida, o quadrante inferior esquerdo é predominantemente ocupado por indivíduos não diabéticos.
 
-## 6. Análise de Correlação Linear
+## 3. Análise de Correlação Linear
 
 Para compreender a estrutura de dependência linear entre as covariáveis do modelo, calculamos os coeficientes de correlação de Pearson.O coeficiente resulta em um valor entre -1 e 1, onde valores extremos indicam forte associação linear (positiva ou negativa) e valores próximos a zero indicam ausência de relação linear 
 
@@ -146,11 +146,11 @@ A representação visual em formato de mapa de calor facilita a rápida identifi
 
 Observando os resultados, podemos notar relações biologicamente esperadas, tais como a correlação positiva moderada entre `Age` (Idade) e `Pregnancies` (Gestações), bem como entre `SkinThickness` (Espessura da Pele) e `BMI` (Índice de Massa Corporal). Identificar essas correlações é um passo fundamental antes da modelagem preditiva, pois variáveis altamente correlacionadas podem inserir redundância e inflar a variância dos estimadores em modelos de regressão múltipla.
 
-## 7. Testes de Hipóteses Obrigatórios
+## 4. Testes de Hipóteses Obrigatórios
 
 Na inferência estatística, os testes estatísticos são regras de decisões, vinculadas a um fenômeno da população, que nos possibilitam avaliar, com o auxílio de uma amostra, se determinadas hipóteses podem ser rejeitadas, ou não. A seguir, aplicamos os testes paramétricos e não paramétricos exigidos para investigar as relações entre as variáveis clínicas e o diagnóstico de diabetes.
 
-### 7.1 Teste Qui-Quadrado de Independência
+### 4.1 Teste Qui-Quadrado de Independência
 
 O teste qui-quadrado de independência é usado para verificar se existe associação entre duas variáveis qualitativas (categóricas). A hipótese nula afirma independência entre as variáveis, enquanto a hipótese alternativa aponta para associação. Neste estudo, categorizamos as variáveis numéricas `Age` (Idade) e `Glucose` (Glicose) para avaliar suas associações categóricas com o diagnóstico (`Outcome`).
 
@@ -190,7 +190,7 @@ print("Teste Qui-Quadrado - Glicose vs Diabetes:")
 print(qui_quadrado_glicose)
 ```
 
-### 7.2 Comparação de Variâncias (Teste F)
+### 4.2 Comparação de Variâncias (Teste F)
 
 Realizamos o teste para comparação de duas variâncias a fim de avaliar a hipótese de homocedasticidade (variâncias iguais) entre os grupos diagnósticos para variáveis contínuas cruciais. A compreensão da dispersão ajuda a caracterizar a heterogeneidade clínica dos pacientes diabéticos em relação aos não diabéticos.
 
@@ -215,7 +215,7 @@ print("Teste F para comparação de variâncias - Idade:")
 print(teste_variancia_idade)
 ```
 
-### 7.3 Comparação de Proporções
+### 4.3 Comparação de Proporções
 
 [cite_start]Para finalizar a análise univariada, aplicamos o teste para comparação de duas proporções[cite: 753]. O objetivo é validar estatisticamente se a proporção de indivíduos diabéticos varia significativamente entre diferentes estratos da amostra (faixas etárias e gênero aproximado pelo histórico de gestações).
 
@@ -267,7 +267,7 @@ print("Teste de proporções - Feminino vs Masculino (diabetes):")
 print(teste_prop_genero)
 ```
 
-## 8. Resumo dos Testes Estatísticos
+## 5. Resumo dos Testes Estatísticos
 
 Para facilitar a visualização e interpretação dos resultados inferenciais, consolidamos os p-valores de todos os testes realizados em uma única tabela. 
 
@@ -306,7 +306,7 @@ kable(tabela_resultados,
       align = "llcl")
 ```
 
-## 9. Análise de Regressão Linear Simples
+## 6. Análise de Regressão Linear Simples
 
 [cite_start]A análise de regressão linear simples visa estabelecer uma relação funcional matemática entre uma variável preditora (independente) e uma variável resposta (dependente)[cite: 37, 38]. [cite_start]Baseado no modelo teórico da reta $y = \beta_0 + \beta_1 x + \epsilon$[cite: 168], ajustamos um modelo pelo Método dos Mínimos Quadrados (MMQ) para verificar como o Índice de Massa Corporal (BMI) pode explicar as variações nos níveis de Glicose (Glucose).
 
@@ -337,7 +337,7 @@ print(grafico_reg)
 A reta de regressão (em vermelho) ilustra a tendência central da relação. A inclinação positiva da reta ($\hat{\beta}_1 > 0$) sugere que o aumento do BMI está linearmente associado à elevação dos níveis de Glicose na amostra analisada.
 
 
-## 10. Regressão Logística (Modelo Preditivo Principal)
+## 7. Regressão Logística (Modelo Preditivo Principal)
 
 Como a nossa variável de interesse principal (`Outcome`) é dicotômica (presença ou ausência de diabetes), a regressão linear simples não é adequada. Para fins de predição diagnóstica, construímos um modelo de Regressão Logística Múltipla. 
 
