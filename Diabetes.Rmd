@@ -1,5 +1,5 @@
 ---
-title: "Análise Estatística e Preditição de Diabetes Tipo 2 em Mulheres da População Indígena Pima"
+title: "Análise Estatística de Diabetes Tipo 2 em Mulheres da População Indígena Pima"
 author: "Matheus Cândido e Fernando Simão"
 date: "18 de março de 2026"
 output: 
@@ -188,7 +188,7 @@ Na inferência estatística, os testes estatísticos são regras de decisões, v
 
 O teste qui-quadrado de independência é usado para verificar se existe associação entre duas variáveis qualitativas (categóricas). A hipótese nula afirma independência entre as variáveis, enquanto a hipótese alternativa aponta para associação. Neste estudo, categorizamos as variáveis numéricas `Age` (Idade) e `Glucose` (Glicose) para avaliar suas associações categóricas com o diagnóstico (`Outcome`).
 $$\chi^2 = \sum \frac{(O_i - E_i)^2}{E_i}$$
-
+<h9>Qui-quadrado é a soma das frequências observadas menos as frequências esperadas, ao quadrado, divididas pelas frequências esperadas.</h9>
 ```{r qui_quadrado_01}
 # ----------------------------------------
 # Criar variáveis categóricas para teste
@@ -320,8 +320,7 @@ ggplot(df_prop_genero %>% filter(Outcome == "1"), aes(x = Genero, y = Percentual
   geom_text(aes(label = paste0(round(Percentual, 1), "%")), vjust = -0.5) +
   scale_fill_manual(values = c("Engravidaram" = "#e377c2", "Nunca engravidaram" = "#1f77b4")) +
   labs(title = "Diabetes entras as mulheres que já engravidaram e as que nunca engravidaram",
-       subtitle = paste("p-value do teste:", round(teste_prop_genero$p.value, 4)),
-       x = "Gênero (Estimado)", y = "Proporção de Casos Positivos (%)") +
+       x = "Gravida / Não Grávida", y = "Proporção de Casos Positivos (%)") +
   theme_minimal()
 # ----------------------------------------
 
@@ -408,3 +407,4 @@ A reta de regressão (em vermelho) ilustra a tendência central da relação. A 
     <li><strong>Visualização de Dados:</strong> WICKHAM, H. <em>ggplot2: Elegant Graphics for Data Analysis.</em> Springer-Verlag New York, 2016.</li>PECK, E. A.; VINING, G. G. <em>Introduction to Linear Regression Analysis.</em> 6th ed. Wiley, 2021.</li>
   </ul>
 </section>
+
